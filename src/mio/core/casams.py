@@ -1,3 +1,5 @@
+import pathlib
+
 import numpy as np
 import graphviper.utils.logger as logger
 
@@ -46,20 +48,28 @@ class CasaMeasurementSet:
         self.handler.check_type()
 
         # Read unknown strings
-        logger.debug("Reading unknown strings ...")
         for _ in range(3):
-            logger.debug(self.handler.string(size=types.FOUR_BYTES))
+            self.handler.string(size=types.FOUR_BYTES)
 
         # Table description struct
         self.table = TableDescription()
 
+        # Read table keywords
         self.table.keywords = table.read_record(self.handler)
-        for key, value in self.table.keywords.records.items():
-            logger.debug(f"|key>: {key}, \t|value> {value}")
 
+        # Read private keywords
         self.table.private = table.read_record(self.handler)
-        for key, value in self.table.private.records.items():
-            logger.debug(f"|key>: {key}, \t|value> {value}")
+
+        # Get number of columns
+        self.table.ncolumns = self.handler.integer(size=types.FOUR_BYTES, dtype=np.int32)
+
+        # Get list of columns
+        self.description = [table.read_column_description(self.handler) for _ in range(self.table.ncolumns)]
+
+        self.column_set = table.read_column_set(self.handler, self.description)
+
+        for index, manager in self.column_set.data_managers.items():
+            logger.info(f"filename: {pathlib.Path(self.filename).resolve().joinpath(f'table.f{index}')}")
 
 
 

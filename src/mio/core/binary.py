@@ -54,7 +54,7 @@ class BinaryFileReader(FileIO):
 
             return data
 
-    def bool(self):
+    def boolean(self):
         return self.read(types.ONE_BYTE) == b"\0x01"
 
     def integer(self, size, dtype):
@@ -109,4 +109,4 @@ class BinaryFileReader(FileIO):
         table_type, version = self.check_type()
         length = self.integer(size=size, dtype=dtype)
 
-        return np.array([self.integer(size=size, dtype=dtype) for i in range(length)], dtype=int)
+        return np.array([self.integer(size=size, dtype=dtype) for _ in range(length)], dtype=int)

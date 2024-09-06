@@ -5,6 +5,19 @@ EIGHT_BYTES: int = 8
 SIXTEEN_BYTES: int = 16
 
 
+TYPE_TO_BYTES = {
+    "bool": ONE_BYTE,
+    "ushort": TWO_BYTES,
+    "short": TWO_BYTES,
+    "uint": FOUR_BYTES,
+    "int": FOUR_BYTES,
+    "float": FOUR_BYTES,
+    "double": EIGHT_BYTES,
+    "complex": EIGHT_BYTES,
+    "record": EIGHT_BYTES,
+    "dcomplex": SIXTEEN_BYTES,
+}
+
 DATA_TYPE = {
     "dcomplex": "c16",
     "complex": "c8",
