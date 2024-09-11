@@ -34,18 +34,16 @@ class CasaMeasurementSet:
 
     def read(self):
         # Get type name and version number
-        self.handler.check_type()
+        self.handler.header()
 
         # Read important meta data
         self.nrows = self.handler.integer(size=types.FOUR_BYTES, dtype=np.int32)
         self.format = self.handler.integer(size=types.FOUR_BYTES, dtype=np.int32)
         self.name = self.handler.string(size=types.FOUR_BYTES)
 
-        logger.debug(f"|File information>: name({self.name}), format({self.format}) nrows({self.nrows})")
-
         # Read table description
         # Get type name and version number (again)
-        self.handler.check_type()
+        self.handler.header()
 
         # Read unknown strings
         for _ in range(3):
@@ -69,7 +67,7 @@ class CasaMeasurementSet:
         self.column_set = table.read_column_set(self.handler, self.description)
 
         for index, manager in self.column_set.data_managers.items():
-            logger.info(f"filename: {pathlib.Path(self.filename).resolve().joinpath(f'table.f{index}')}")
+            logger.info(f"{manager}: {pathlib.Path(self.filename).resolve().joinpath(f'table.f{index}')}")
 
 
 

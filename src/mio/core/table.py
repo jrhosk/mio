@@ -1,13 +1,13 @@
 import pathlib
-from collections import OrderedDict
-from typing import Union
 
-from mio.core.binary import BinaryFileReader
 import numpy as np
 import graphviper.utils.logger as logger
 
 from mio.utilities import types
 from mio.managers import store
+
+from collections import OrderedDict
+from mio.core.binary import BinaryFileReader
 
 from dataclasses import dataclass
 
@@ -66,20 +66,22 @@ class PlainColumn:
 
 
 def build_array_column_data(file_handle) -> ColumnData:
+    # Structure containing column data
     column_data = ColumnData()
+
     column_data.version = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
     column_data.sequence_number = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
 
     shape = file_handle.boolean()
-    logger.debug(f"shape: {shape}")
-
     column_data.shape = file_handle.position(size=types.FOUR_BYTES, dtype=np.int32).tolist() if shape else tuple()
 
     return column_data
 
 
 def build_scalar_column_data(file_handle) -> ColumnData:
+    # Structure containing column data
     column_data = ColumnData()
+
     column_data.version = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
     column_data.sequence_number = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
 
@@ -89,18 +91,18 @@ def build_scalar_column_data(file_handle) -> ColumnData:
 
 
 def build_plain_column(file_handle, ndims) -> PlainColumn:
+    # Structure containing PlainColumn data
     plain_column = PlainColumn()
+
     version = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
-    logger.warning(f"version: {version}")
 
     if version < 2:
         logger.error(f"Plain column support doesn't exist for version < 2")
         raise NotImplementedError
 
     plain_column.name = file_handle.string(size=types.FOUR_BYTES)
-    plain_column.data = build_array_column_data(file_handle) if ndims != 0 else build_scalar_column_data(file_handle)
 
-    logger.warning(f"name: {plain_column.name} ({ndims}): {plain_column.data}")
+    plain_column.data = build_array_column_data(file_handle) if ndims != 0 else build_scalar_column_data(file_handle)
 
     return plain_column
 
@@ -142,10 +144,14 @@ def read_column_set(file_handle: BinaryFileReader, description: list[ColumnDescr
     # Read magic code (again) and a length
     file_handle.read(types.EIGHT_BYTES)
 
-    column_set.data_manager_class = OrderedDict()
+    column_set.data_managers = OrderedDict()
 
     for sequence_number in data_manager_class:
-        column_set.data_managers[sequence_number] = data_manager_class[sequence_number].read(types.EIGHT_BYTES)
+        #logger.debug(f"Manager: {data_manager_class[sequence_number]}")
+        column_set.data_managers[sequence_number] = data_manager_class[sequence_number].read(file_handle)
+
+        # What is this ...
+        file_handle.read(types.EIGHT_BYTES)
 
     return column_set
 
@@ -225,7 +231,7 @@ def read_record_description(file_handle) -> RecordDescription:
     description.names = []
     description.types = []
 
-    file_handle.check_type()
+    file_handle.header()
 
     # Look through the records and sort them by type:
     description.nrecords = file_handle.integer(size=types.FOUR_BYTES, dtype=np.int32)
@@ -257,7 +263,7 @@ def read_record_description(file_handle) -> RecordDescription:
 
 
 def read_record(file_handle):
-    file_handle.check_type()
+    file_handle.header()
 
     record_object = TableRecord()
     description = read_record_description(file_handle)

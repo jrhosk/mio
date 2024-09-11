@@ -34,7 +34,7 @@ class BinaryFileReader(FileIO):
 
         logger.debug(f"Reading endianess ... {self.endian}")
 
-    def check_type(self):
+    def header(self):
         _ = self.integer(size=types.FOUR_BYTES, dtype=np.int32)
         table_type = self.string(size=types.FOUR_BYTES)
         version = self.integer(size=types.FOUR_BYTES, dtype=np.int32)
@@ -55,7 +55,7 @@ class BinaryFileReader(FileIO):
             return data
 
     def boolean(self):
-        return self.read(types.ONE_BYTE) == b"\0x01"
+        return self.read(types.ONE_BYTE) == b"\x01"
 
     def integer(self, size, dtype):
         """
@@ -78,7 +78,7 @@ class BinaryFileReader(FileIO):
         return dtype(self.float(size=csize, dtype=ctype) + ij * self.float(size=csize, dtype=ctype))
 
     def array(self, atype):
-        self.check_type()
+        self.header()
 
         ndim = self.integer(size=types.FOUR_BYTES, dtype=np.int32)
         shape = [self.integer(size=types.FOUR_BYTES, dtype=np.int32) for _ in range(ndim)]
@@ -106,7 +106,7 @@ class BinaryFileReader(FileIO):
         return array
 
     def position(self, size, dtype):
-        table_type, version = self.check_type()
+        table_type, version = self.header()
         length = self.integer(size=size, dtype=dtype)
 
         return np.array([self.integer(size=size, dtype=dtype) for _ in range(length)], dtype=int)
